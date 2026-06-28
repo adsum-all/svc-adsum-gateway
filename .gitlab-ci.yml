@@ -1,0 +1,6 @@
+# Minimal pipeline for ADSUM. Delegates to the shared CI templates in
+# sr-media-ai/adsum/deployment/ci-templates (Constitution audit and stack jobs).
+include:
+  - project: 'sr-media-ai/adsum/deployment/ci-templates'
+    ref: main
+    file: '/templates/python.yml'
