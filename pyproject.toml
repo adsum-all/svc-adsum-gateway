@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "adsum-passerelle"
+version = "0.1.0"
+description = "La passerelle sortante ADSUM : courriel, messagerie, SMS, notifications"
+requires-python = ">=3.11"
+# La liste complete de ce que le service exige pour tourner. L hebergeur installe
+# depuis ce fichier et non depuis un requirements.txt : une dependance oubliee ici
+# produit un service qui ne demarre pas, et l echec ne se voit qu au deploiement.
+# Les bornes hautes ne sont pas decoratives. Sans elles, l hebergeur installe la
+# version la plus recente a chaque construction : le service deploye n est alors pas
+# celui qui a ete teste, et une regression amont devient une panne de production sans
+# qu une seule ligne de ce depot ait change.
+#
+# Le plancher est la version eprouvee le 13 aout 2026, le plafond la majeure
+# suivante. Epingler au patch obligerait a toucher ces fichiers a chaque correctif de
+# securite amont, ce que personne ne fait : la borne finirait retiree, et on serait
+# revenu au point de depart.
+dependencies = [
+    "fastapi>=0.138,<1.0",
+    "httpx>=0.28,<1.0",
+    "psycopg[binary]>=3.3,<4.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/passerelle"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
