@@ -29,6 +29,29 @@ def _dsn() -> str | None:
             f"@aws-0-{s['region']}.pooler.supabase.com:5432/postgres?sslmode=require")
 
 
+@pytest.fixture(autouse=True)
+def poivre_de_test(monkeypatch):
+    """Le poivre du registre, pose avant chaque test.
+
+    Sans cette barriere, la suite passait sur la machine ou la variable trainait
+    dans le shell et tombait en conteneur, ce qui est exactement l'ordre dans
+    lequel on ne veut pas decouvrir une dependance a l'environnement. Le service
+    exige ce poivre a juste titre : il refuse de journaliser une adresse dont
+    l'empreinte serait retrouvable par dictionnaire. Le test doit donc le fournir,
+    pas s'en remettre a celui du poste.
+
+    Les tests qui verifient precisement l'absence ou la faiblesse du poivre le
+    reecrivent par monkeypatch ; ce montage ne fait que garantir un etat de depart
+    defini, jamais herite.
+    """
+    from passerelle import journal
+
+    monkeypatch.setenv("ADSUM_PASSERELLE_POIVRE", "poivre-de-test-" + "0" * 24)
+    monkeypatch.setattr(journal, "_POIVRE", None)
+    yield
+    journal._POIVRE = None
+
+
 @pytest.fixture(scope="module")
 def base():
     dsn = os.environ.get("PASSERELLE_DSN") or _dsn()
