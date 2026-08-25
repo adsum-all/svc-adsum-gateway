@@ -71,6 +71,18 @@ class Configuration:
     brevo_nom: str = "ADSUM"
     brevo_secret_accuse: str = ""
     telegram_jeton: str = ""
+    whatsapp_jeton: str = ""
+    #: L'identifiant que Meta attribue au numéro expéditeur, pas le numéro.
+    whatsapp_numero: str = ""
+    #: Le secret de l'application Meta. Sans lui, les accusés WhatsApp sont refusés
+    #: plutôt que crus : un retour non signé permettrait de déclarer mort le numéro
+    #: de son choix, donc de faire taire la plateforme pour cette personne.
+    whatsapp_secret_accuse: str = ""
+    #: Le gabarit approuvé utilisé quand l'appelant n'en nomme aucun. Hors fenêtre
+    #: de réponse, Meta n'accepte rien d'autre, et sans gabarit par défaut le canal
+    #: ne sert qu'à répondre, jamais à prévenir.
+    whatsapp_gabarit: str = ""
+    whatsapp_langue: str = "fr"
 
     @classmethod
     def depuis_environnement(cls) -> "Configuration":
@@ -100,6 +112,19 @@ class Configuration:
             brevo_nom=lire("ADSUM_BREVO_NOM", "ADSUM"),
             brevo_secret_accuse=lire("ADSUM_BREVO_SECRET_ACCUSE", ""),
             telegram_jeton=lire("ADSUM_TELEGRAM_JETON", ""),
+            # Les noms de la passerelle d'abord, ceux déjà posés sur l'API métier
+            # ensuite. Faire poser deux fois la même valeur sous deux noms garantit
+            # qu'un jour l'une des deux sera renouvelée sans l'autre.
+            whatsapp_jeton=lire("ADSUM_WHATSAPP_JETON")
+            or lire("ADSUM_WHATSAPP_TOKEN", ""),
+            whatsapp_numero=lire("ADSUM_WHATSAPP_NUMERO")
+            or lire("ADSUM_WHATSAPP_PHONE_NUMBER_ID", ""),
+            whatsapp_secret_accuse=lire("ADSUM_WHATSAPP_SECRET_ACCUSE")
+            or lire("ADSUM_WHATSAPP_APP_SECRET", ""),
+            whatsapp_gabarit=lire("ADSUM_WHATSAPP_GABARIT")
+            or lire("ADSUM_WHATSAPP_TEMPLATE", ""),
+            whatsapp_langue=lire("ADSUM_WHATSAPP_LANGUE")
+            or lire("ADSUM_WHATSAPP_TEMPLATE_LANG", "fr"),
         )
 
 
@@ -123,6 +148,18 @@ def construire_registre(config: Configuration) -> Registre:
         from .adaptateurs.telegram import Telegram
 
         registre.enregistrer(Telegram(config.telegram_jeton), rang=10)
+
+    # Les deux identifiants ensemble, jamais l'un sans l'autre : un jeton sans
+    # numéro expéditeur ferait échouer tout message que le classement confierait à
+    # WhatsApp, y compris ceux qu'un autre fournisseur aurait pu acheminer.
+    if config.whatsapp_jeton and config.whatsapp_numero:
+        from .adaptateurs.whatsapp import WhatsApp
+
+        registre.enregistrer(WhatsApp(
+            config.whatsapp_jeton, config.whatsapp_numero,
+            config.whatsapp_secret_accuse, config.whatsapp_gabarit,
+            config.whatsapp_langue,
+        ), rang=10)
 
     return registre
 

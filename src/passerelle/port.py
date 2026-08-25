@@ -38,6 +38,11 @@ class Canal(str, Enum):
 
     COURRIEL = "courriel"
     TELEGRAM = "telegram"
+    #: Messagerie WhatsApp par le compte professionnel de l'éditeur. Le seul
+    #: canal dont le fournisseur impose ce que l'on a le droit d'écrire : hors
+    #: fenêtre de réponse, un message non sollicité doit passer par un gabarit
+    #: approuvé par Meta. L'adaptateur porte cette contrainte, pas l'appelant.
+    WHATSAPP = "whatsapp"
     SMS = "sms"
     #: Notification poussée vers une application mobile installée.
     POUSSEE = "poussee"
